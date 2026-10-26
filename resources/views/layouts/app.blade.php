@@ -79,6 +79,7 @@
     <header>
         <nav aria-label="Navigasi utama">
             <a href="{{ route('home') }}">BookSales</a>
+            <a href="{{ route('books.index') }}">Buku</a>
             <a href="{{ route('genres.index') }}">Genre</a>
             <a href="{{ route('authors.index') }}">Author</a>
         </nav>

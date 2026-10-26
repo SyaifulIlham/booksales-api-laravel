@@ -2,39 +2,23 @@
 
 namespace App\Models;
 
-class Genre
+use Database\Factories\GenreFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Genre extends Model
 {
-    /**
-     * @return list<array{id: int, name: string, description: string}>
-     */
-    public static function data(): array
+    /** @use HasFactory<GenreFactory> */
+    use HasFactory;
+
+    protected $fillable = [
+        'name',
+        'description',
+    ];
+
+    public function books(): HasMany
     {
-        return [
-            [
-                'id' => 1,
-                'name' => 'Fiction',
-                'description' => 'Cerita rekaan dan imajinatif',
-            ],
-            [
-                'id' => 2,
-                'name' => 'Non-Fiction',
-                'description' => 'Buku berbasis fakta dan pengetahuan',
-            ],
-            [
-                'id' => 3,
-                'name' => 'Science Fiction',
-                'description' => 'Cerita bertema sains dan masa depan',
-            ],
-            [
-                'id' => 5,
-                'name' => 'Romance',
-                'description' => 'Cerita bertema percintaan',
-            ],
-            [
-                'id' => 6,
-                'name' => 'Mystery',
-                'description' => 'Cerita misteri dan teka-teki',
-            ],
-        ];
+        return $this->hasMany(Book::class);
     }
 }

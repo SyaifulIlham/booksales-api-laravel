@@ -9,9 +9,9 @@
     <div class="cards">
         @foreach ($genres as $genre)
             <article class="card">
-                <p class="muted">ID {{ $genre['id'] }}</p>
-                <h2>{{ $genre['name'] }}</h2>
-                <p>{{ $genre['description'] }}</p>
+                <p class="muted">ID {{ $genre->id }}</p>
+                <h2>{{ $genre->name }}</h2>
+                <p>{{ $genre->description }}</p>
             </article>
         @endforeach
     </div>

@@ -10,7 +10,7 @@ class GenreController extends Controller
     public function index(): View
     {
         return view('genres.index', [
-            'genres' => Genre::data(),
+            'genres' => Genre::query()->orderBy('name')->get(),
         ]);
     }
 }
