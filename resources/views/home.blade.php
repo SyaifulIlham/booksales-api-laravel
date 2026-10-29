@@ -14,13 +14,13 @@
         </section>
         <section class="card">
             <h2>Genre</h2>
-            <p>Lihat lima genre buku.</p>
-            <p><a href="{{ route('genres.index') }}">Tampilkan genre</a></p>
+            <p>Lihat dan tambahkan genre buku.</p>
+            <p><a href="{{ route('genres.page.index') }}">Tampilkan genre</a></p>
         </section>
         <section class="card">
             <h2>Author</h2>
-            <p>Lihat lima author buku.</p>
-            <p><a href="{{ route('authors.index') }}">Tampilkan author</a></p>
+            <p>Lihat dan tambahkan author buku.</p>
+            <p><a href="{{ route('authors.page.index') }}">Tampilkan author</a></p>
         </section>
     </div>
 @endsection

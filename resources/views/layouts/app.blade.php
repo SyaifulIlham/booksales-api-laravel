@@ -73,6 +73,60 @@
             color: #6b7280;
             font-size: 0.9rem;
         }
+
+        .button {
+            display: inline-block;
+            padding: 0.65rem 1rem;
+            border: 0;
+            border-radius: 6px;
+            background: #1e3a5f;
+            color: #fff;
+            font: inherit;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .form {
+            display: grid;
+            gap: 1rem;
+            max-width: 640px;
+            margin-top: 1.5rem;
+            padding: 1.25rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        .form-field {
+            display: grid;
+            gap: 0.4rem;
+        }
+
+        .form-field input,
+        .form-field textarea {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 0.65rem;
+            border: 1px solid #9ca3af;
+            border-radius: 6px;
+            font: inherit;
+        }
+
+        .form-field textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .error,
+        .status {
+            margin-top: 0.5rem;
+            color: #b91c1c;
+        }
+
+        .status {
+            color: #166534;
+        }
     </style>
 </head>
 <body>
@@ -80,8 +134,8 @@
         <nav aria-label="Navigasi utama">
             <a href="{{ route('home') }}">BookSales</a>
             <a href="{{ route('books.index') }}">Buku</a>
-            <a href="{{ route('genres.index') }}">Genre</a>
-            <a href="{{ route('authors.index') }}">Author</a>
+            <a href="{{ route('genres.page.index') }}">Genre</a>
+            <a href="{{ route('authors.page.index') }}">Author</a>
         </nav>
     </header>
     <main>
