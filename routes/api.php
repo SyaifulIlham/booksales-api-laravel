@@ -5,8 +5,6 @@ use App\Http\Controllers\BookController;
 use App\Http\Controllers\GenreController;
 use Illuminate\Support\Facades\Route;
 
-Route::apiResources([
-    'books' => BookController::class,
-    'genres' => GenreController::class,
-    'authors' => AuthorController::class,
-]);
+Route::apiResource('books', BookController::class);
+Route::apiResource('genres', GenreController::class);
+Route::apiResource('authors', AuthorController::class);

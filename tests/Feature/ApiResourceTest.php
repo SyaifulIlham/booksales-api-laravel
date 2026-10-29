@@ -159,3 +159,13 @@ it('returns not found when requesting a resource that does not exist', function 
     $this->getJson('/api/books/999')
         ->assertNotFound();
 });
+
+it('returns 404 when requesting, updating, or deleting a missing genre or author', function () {
+    $this->getJson('/api/genres/999')->assertNotFound();
+    $this->patchJson('/api/genres/999', ['name' => 'Missing'])->assertNotFound();
+    $this->deleteJson('/api/genres/999')->assertNotFound();
+
+    $this->getJson('/api/authors/999')->assertNotFound();
+    $this->patchJson('/api/authors/999', ['name' => 'Missing'])->assertNotFound();
+    $this->deleteJson('/api/authors/999')->assertNotFound();
+});

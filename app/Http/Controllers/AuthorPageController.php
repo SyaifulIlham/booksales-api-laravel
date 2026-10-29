@@ -23,6 +23,16 @@ class AuthorPageController extends Controller
         return view('authors.create');
     }
 
+    public function show(Author $author): View
+    {
+        return view('authors.show', compact('author'));
+    }
+
+    public function edit(Author $author): View
+    {
+        return view('authors.edit', compact('author'));
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -36,5 +46,35 @@ class AuthorPageController extends Controller
         return redirect()
             ->route('authors.page.index')
             ->with('status', 'Author berhasil ditambahkan.');
+    }
+
+    public function update(Request $request, Author $author): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'photo' => ['required', 'string', 'max:255'],
+            'bio' => ['required', 'string'],
+        ]);
+
+        $author->update($validated);
+
+        return redirect()
+            ->route('authors.page.show', $author)
+            ->with('status', 'Author berhasil diperbarui.');
+    }
+
+    public function destroy(Author $author): RedirectResponse
+    {
+        if ($author->books()->exists()) {
+            return back()->withErrors([
+                'delete' => 'Author tidak dapat dihapus selama masih digunakan oleh buku.',
+            ]);
+        }
+
+        $author->delete();
+
+        return redirect()
+            ->route('authors.page.index')
+            ->with('status', 'Author berhasil dihapus.');
     }
 }

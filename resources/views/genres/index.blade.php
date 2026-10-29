@@ -10,6 +10,9 @@
     @if (session('status'))
         <p class="status" role="status">{{ session('status') }}</p>
     @endif
+    @error('delete')
+        <p class="error" role="alert">{{ $message }}</p>
+    @enderror
 
     <div class="cards">
         @foreach ($genres as $genre)
@@ -17,6 +20,15 @@
                 <p class="muted">ID {{ $genre->id }}</p>
                 <h2>{{ $genre->name }}</h2>
                 <p>{{ $genre->description }}</p>
+                <p>
+                    <a href="{{ route('genres.page.show', $genre) }}">Detail</a>
+                    <a href="{{ route('genres.page.edit', $genre) }}">Ubah</a>
+                </p>
+                <form method="POST" action="{{ route('genres.page.destroy', $genre) }}">
+                    @csrf
+                    @method('DELETE')
+                    <button class="button" type="submit">Hapus</button>
+                </form>
             </article>
         @endforeach
     </div>
