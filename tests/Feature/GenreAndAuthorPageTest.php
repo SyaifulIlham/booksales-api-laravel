@@ -3,6 +3,7 @@
 use App\Models\Author;
 use App\Models\Book;
 use App\Models\Genre;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -48,6 +49,8 @@ it('shows all authors on the author page', function () {
 });
 
 it('shows genre details and an edit form', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $genre = Genre::factory()->create([
         'name' => 'Adventure',
         'description' => 'Petualangan seru.',
@@ -65,6 +68,8 @@ it('shows genre details and an edit form', function () {
 });
 
 it('updates and deletes a genre from its page', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $genre = Genre::factory()->create();
 
     $this->put(route('genres.page.update', $genre), [
@@ -87,6 +92,8 @@ it('updates and deletes a genre from its page', function () {
 });
 
 it('shows author details and an edit form', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $author = Author::factory()->create([
         'name' => 'Ayu Utami',
         'photo' => 'ayu.jpg',
@@ -106,6 +113,8 @@ it('shows author details and an edit form', function () {
 });
 
 it('updates and deletes an author from its page', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $author = Author::factory()->create();
 
     $this->put(route('authors.page.update', $author), [
@@ -130,6 +139,8 @@ it('updates and deletes an author from its page', function () {
 });
 
 it('returns 404 for missing genre and author page records', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $this->get('/genres/999')->assertNotFound();
     $this->get('/authors/999')->assertNotFound();
 
@@ -148,6 +159,8 @@ it('returns 404 for missing genre and author page records', function () {
 });
 
 it('shows the genre creation form', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $response = $this->get('/genres/create');
 
     $response->assertOk()
@@ -156,6 +169,8 @@ it('shows the genre creation form', function () {
 });
 
 it('shows the author creation form', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $response = $this->get('/authors/create');
 
     $response->assertOk()
@@ -165,6 +180,8 @@ it('shows the author creation form', function () {
 });
 
 it('creates a genre from the genre form', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $response = $this->post('/genres', [
         'name' => 'Adventure',
         'description' => 'Cerita petualangan.',
@@ -180,6 +197,8 @@ it('creates a genre from the genre form', function () {
 });
 
 it('requires genre fields when creating a genre', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $response = $this->from('/genres/create')->post('/genres', []);
 
     $response->assertRedirect('/genres/create')
@@ -188,6 +207,8 @@ it('requires genre fields when creating a genre', function () {
 });
 
 it('creates an author from the author form', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $response = $this->post('/authors', [
         'name' => 'Ayu Utami',
         'photo' => 'ayu-utami.jpg',
@@ -205,6 +226,8 @@ it('creates an author from the author form', function () {
 });
 
 it('requires author fields when creating an author', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $response = $this->from('/authors/create')->post('/authors', []);
 
     $response->assertRedirect('/authors/create')
@@ -213,6 +236,8 @@ it('requires author fields when creating an author', function () {
 });
 
 it('prevents deleting genres and authors used by books', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $book = Book::factory()->create();
 
     $this->from(route('genres.page.show', $book->genre))

@@ -3,6 +3,7 @@
 use App\Models\Author;
 use App\Models\Book;
 use App\Models\Genre;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -57,6 +58,8 @@ it('creates reads updates and deletes a book through the API', function () {
 });
 
 it('creates reads updates and deletes a genre through the API', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $response = $this->postJson('/api/genres', [
         'name' => 'New Genre',
         'description' => 'Genre description',
@@ -88,6 +91,8 @@ it('creates reads updates and deletes a genre through the API', function () {
 });
 
 it('creates reads updates and deletes an author through the API', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $response = $this->postJson('/api/authors', [
         'name' => 'New Author',
         'photo' => 'new-author.jpg',
@@ -141,6 +146,8 @@ it('rejects invalid book data without creating a book', function () {
 });
 
 it('prevents deleting authors and genres that are used by books', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $book = Book::factory()->create();
 
     $this->deleteJson("/api/authors/{$book->author_id}")
@@ -161,6 +168,8 @@ it('returns not found when requesting a resource that does not exist', function 
 });
 
 it('returns 404 when requesting, updating, or deleting a missing genre or author', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $this->getJson('/api/genres/999')->assertNotFound();
     $this->patchJson('/api/genres/999', ['name' => 'Missing'])->assertNotFound();
     $this->deleteJson('/api/genres/999')->assertNotFound();
