@@ -4,7 +4,9 @@ use App\Http\Controllers\AuthorPageController;
 use App\Http\Controllers\GenrePageController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'home')->name('home');
+Route::get('/', function () {
+    return response()->file(public_path('index.html'));
+})->name('home');
 
 Route::controller(GenrePageController::class)
     ->prefix('genres')
