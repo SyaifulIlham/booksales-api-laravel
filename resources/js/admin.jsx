@@ -70,9 +70,11 @@ function App() {
     const [records, setRecords] = useState({ genres: [], authors: [] });
     const [search, setSearch] = useState('');
     const [formOpen, setFormOpen] = useState(false);
+    const [editingRecord, setEditingRecord] = useState(null);
     const [formValues, setFormValues] = useState({});
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [deletingId, setDeletingId] = useState(null);
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
 
@@ -152,36 +154,88 @@ function App() {
     }
 
     function openCreateForm() {
+        setEditingRecord(null);
         setFormValues({});
         setError('');
         setFormOpen(true);
     }
 
-    async function handleCreate(event) {
+    function openEditForm(item) {
+        setEditingRecord(item);
+        setFormValues(Object.fromEntries(
+            sections[activeSection].fields.map((field) => [field.name, item[field.name] || '']),
+        ));
+        setError('');
+        setFormOpen(true);
+    }
+
+    function closeForm() {
+        setFormOpen(false);
+        setEditingRecord(null);
+        setFormValues({});
+        setError('');
+    }
+
+    async function handleSave(event) {
         event.preventDefault();
         setSaving(true);
         setError('');
 
         try {
-            await apiRequest(activeSection, {
-                token: session.token,
-                method: 'POST',
-                body: JSON.stringify(formValues),
-            });
+            const savedRecord = await apiRequest(
+                editingRecord ? `${activeSection}/${editingRecord.id}` : activeSection,
+                {
+                    token: session.token,
+                    method: editingRecord ? 'PUT' : 'POST',
+                    body: JSON.stringify(formValues),
+                },
+            );
 
-            const [genres, authors] = await Promise.all([
-                apiRequest('genres', { token: session.token }),
-                apiRequest('authors', { token: session.token }),
-            ]);
-            setRecords({ genres, authors });
-            setFormOpen(false);
-            setFormValues({});
-            setNotice(`${sections[activeSection].label} berhasil ditambahkan.`);
+            setRecords((currentRecords) => {
+                const currentItems = currentRecords[activeSection];
+                const nextItems = editingRecord
+                    ? currentItems.map((item) => item.id === savedRecord.id ? savedRecord : item)
+                    : [...currentItems, savedRecord];
+
+                return {
+                    ...currentRecords,
+                    [activeSection]: nextItems.sort((first, second) => first.name.localeCompare(second.name, 'id')),
+                };
+            });
+            closeForm();
+            setNotice(`${sections[activeSection].label} berhasil ${editingRecord ? 'diperbarui' : 'ditambahkan'}.`);
             window.setTimeout(() => setNotice(''), 3500);
-        } catch (createError) {
-            setError(createError.message);
+        } catch (saveError) {
+            setError(saveError.message);
         } finally {
             setSaving(false);
+        }
+    }
+
+    async function handleDelete(item) {
+        if (!window.confirm(`Hapus ${sections[activeSection].singular} "${item.name}" dari katalog?`)) {
+            return;
+        }
+
+        setDeletingId(item.id);
+        setError('');
+
+        try {
+            await apiRequest(`${activeSection}/${item.id}`, {
+                token: session.token,
+                method: 'DELETE',
+            });
+
+            setRecords((currentRecords) => ({
+                ...currentRecords,
+                [activeSection]: currentRecords[activeSection].filter((record) => record.id !== item.id),
+            }));
+            setNotice(`${sections[activeSection].label} berhasil dihapus.`);
+            window.setTimeout(() => setNotice(''), 3500);
+        } catch (deleteError) {
+            setError(deleteError.message);
+        } finally {
+            setDeletingId(null);
         }
     }
 
@@ -324,6 +378,7 @@ function App() {
                             <span>{currentSection.singular.toUpperCase()}</span>
                             <span>DESKRIPSI</span>
                             <span>STATUS</span>
+                            <span>AKSI</span>
                         </div>
                         {error && <div className="inline-error" role="alert">{error}</div>}
                         {loading ? (
@@ -348,6 +403,26 @@ function App() {
                                         </div>
                                         <p className="record-description">{currentSection.secondary(item) || 'Belum ada deskripsi.'}</p>
                                         <span className="status-pill"><i /> Aktif</span>
+                                        <div className="record-actions">
+                                            <button
+                                                aria-label={`Edit ${item.name}`}
+                                                className="record-action record-action-edit"
+                                                disabled={deletingId !== null}
+                                                onClick={() => openEditForm(item)}
+                                                type="button"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                aria-label={`Hapus ${item.name}`}
+                                                className="record-action record-action-delete"
+                                                disabled={deletingId !== null}
+                                                onClick={() => handleDelete(item)}
+                                                type="button"
+                                            >
+                                                {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
+                                            </button>
+                                        </div>
                                     </article>
                                 ))}
                             </div>
@@ -369,17 +444,17 @@ function App() {
 
             {notice && <div className="toast" role="status"><span>✓</span>{notice}</div>}
             {formOpen && (
-                <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setFormOpen(false); }}>
+                <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) closeForm(); }}>
                     <section aria-labelledby="create-title" aria-modal="true" className="modal-card" role="dialog">
                         <div className="modal-heading">
                             <div>
-                                <span className="eyebrow">KATALOG BARU</span>
-                                <h2 id="create-title">Tambah {currentSection.singular}</h2>
-                                <p>Lengkapi informasi berikut untuk menambahkan data.</p>
+                                <span className="eyebrow">{editingRecord ? 'PERBARUI KATALOG' : 'KATALOG BARU'}</span>
+                                <h2 id="create-title">{editingRecord ? `Edit ${currentSection.singular}` : `Tambah ${currentSection.singular}`}</h2>
+                                <p>Lengkapi informasi berikut untuk {editingRecord ? 'memperbarui' : 'menambahkan'} data.</p>
                             </div>
-                            <button aria-label="Tutup" className="close-button" onClick={() => setFormOpen(false)} type="button">×</button>
+                            <button aria-label="Tutup" className="close-button" disabled={saving} onClick={closeForm} type="button">×</button>
                         </div>
-                        <form className="form-stack" onSubmit={handleCreate}>
+                        <form className="form-stack" onSubmit={handleSave}>
                             {currentSection.fields.map((field) => (
                                 <label key={field.name}>
                                     {field.label}
@@ -404,9 +479,9 @@ function App() {
                             ))}
                             {error && <p className="form-error" role="alert">{error}</p>}
                             <div className="modal-actions">
-                                <button className="button button-secondary" onClick={() => setFormOpen(false)} type="button">Batal</button>
+                                <button className="button button-secondary" disabled={saving} onClick={closeForm} type="button">Batal</button>
                                 <button className="button button-primary" disabled={saving} type="submit">
-                                    {saving ? 'Menyimpan...' : `Simpan ${currentSection.singular}`}
+                                    {saving ? 'Menyimpan...' : editingRecord ? 'Simpan perubahan' : `Simpan ${currentSection.singular}`}
                                 </button>
                             </div>
                         </form>
