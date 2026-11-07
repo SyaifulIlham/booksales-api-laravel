@@ -85,6 +85,31 @@ it('allows a customer to show and update only their own transaction', function (
     ])->assertNotFound();
 });
 
+it('returns only the authenticated customer transactions for their account page', function () {
+    $customer = User::factory()->create();
+    $otherCustomer = User::factory()->create();
+    $transaction = $customer->transactions()->create([
+        'order_number' => 'ORD-MINE-001',
+        'book_id' => Book::factory()->create()->id,
+        'quantity' => 1,
+        'total_amount' => '12000.00',
+    ]);
+    $otherCustomer->transactions()->create([
+        'order_number' => 'ORD-MINE-002',
+        'book_id' => Book::factory()->create()->id,
+        'quantity' => 2,
+        'total_amount' => '24000.00',
+    ]);
+
+    $this->actingAs($customer)
+        ->getJson('/api/my-transactions')
+        ->assertOk()
+        ->assertJsonCount(1)
+        ->assertJsonPath('0.id', $transaction->id)
+        ->assertJsonPath('0.order_number', 'ORD-MINE-001')
+        ->assertJsonPath('0.book.id', $transaction->book_id);
+});
+
 it('allows only admins to list all transactions and delete transactions', function () {
     $admin = User::factory()->admin()->create();
     $customer = User::factory()->create();

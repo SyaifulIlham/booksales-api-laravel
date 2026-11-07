@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-it('allows guests to read author and genre lists and details', function () {
+it('allows guests to read author and genre lists and details through the API', function () {
     $author = Author::factory()->create(['name' => 'Public Author']);
     $genre = Genre::factory()->create(['name' => 'Public Genre']);
 
@@ -26,14 +26,9 @@ it('allows guests to read author and genre lists and details', function () {
     $this->getJson("/api/genres/{$genre->id}")
         ->assertOk()
         ->assertJsonPath('name', 'Public Genre');
-
-    $this->get('/authors')->assertOk()->assertSee('Public Author');
-    $this->get(route('authors.page.show', $author))->assertOk()->assertSee('Public Author');
-    $this->get('/genres')->assertOk()->assertSee('Public Genre');
-    $this->get(route('genres.page.show', $genre))->assertOk()->assertSee('Public Genre');
 });
 
-it('returns 401 to guests attempting author and genre API writes', function () {
+it('rejects guests from author and genre API writes without changing records', function () {
     $author = Author::factory()->create();
     $genre = Genre::factory()->create();
 
@@ -62,34 +57,19 @@ it('returns 401 to guests attempting author and genre API writes', function () {
     $this->assertDatabaseHas('genres', ['id' => $genre->id, 'name' => $genre->name]);
 });
 
-it('returns 401 to guests attempting author and genre web write routes', function () {
+it('forbids customers from author and genre API writes without changing records', function () {
     $author = Author::factory()->create();
     $genre = Genre::factory()->create();
+    $customer = User::factory()->create();
 
-    $this->get('/authors/create')->assertUnauthorized();
-    $this->get(route('authors.page.edit', $author))->assertUnauthorized();
-    $this->post('/authors', [])->assertUnauthorized();
-    $this->put(route('authors.page.update', $author), [])->assertUnauthorized();
-    $this->delete(route('authors.page.destroy', $author))->assertUnauthorized();
-
-    $this->get('/genres/create')->assertUnauthorized();
-    $this->get(route('genres.page.edit', $genre))->assertUnauthorized();
-    $this->post('/genres', [])->assertUnauthorized();
-    $this->put(route('genres.page.update', $genre), [])->assertUnauthorized();
-    $this->delete(route('genres.page.destroy', $genre))->assertUnauthorized();
-});
-
-it('forbids non-admin users from author and genre API and web write routes', function () {
-    $author = Author::factory()->create();
-    $genre = Genre::factory()->create();
-
-    $this->actingAs(User::factory()->create());
+    $this->actingAs($customer);
 
     $this->postJson('/api/authors', [
         'name' => 'New Author',
         'photo' => 'new-author.jpg',
         'bio' => 'Author biography',
     ])->assertForbidden();
+
     $this->patchJson("/api/authors/{$author->id}", ['name' => 'Changed Author'])
         ->assertForbidden();
     $this->deleteJson("/api/authors/{$author->id}")->assertForbidden();
@@ -98,21 +78,10 @@ it('forbids non-admin users from author and genre API and web write routes', fun
         'name' => 'New Genre',
         'description' => 'Genre description',
     ])->assertForbidden();
+
     $this->patchJson("/api/genres/{$genre->id}", ['name' => 'Changed Genre'])
         ->assertForbidden();
     $this->deleteJson("/api/genres/{$genre->id}")->assertForbidden();
-
-    $this->get('/authors/create')->assertForbidden();
-    $this->get(route('authors.page.edit', $author))->assertForbidden();
-    $this->post('/authors', [])->assertForbidden();
-    $this->put(route('authors.page.update', $author), [])->assertForbidden();
-    $this->delete(route('authors.page.destroy', $author))->assertForbidden();
-
-    $this->get('/genres/create')->assertForbidden();
-    $this->get(route('genres.page.edit', $genre))->assertForbidden();
-    $this->post('/genres', [])->assertForbidden();
-    $this->put(route('genres.page.update', $genre), [])->assertForbidden();
-    $this->delete(route('genres.page.destroy', $genre))->assertForbidden();
 
     $this->assertDatabaseCount('authors', 1);
     $this->assertDatabaseCount('genres', 1);

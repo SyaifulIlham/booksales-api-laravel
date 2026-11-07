@@ -30,6 +30,45 @@ it('registers a customer with a unique username and hashed password', function (
     $this->assertModelExists($user);
 });
 
+it('allows a registered customer to log in and receives their customer role', function () {
+    $user = User::factory()->create([
+        'email' => 'customer@example.com',
+        'password' => 'secret-password',
+    ]);
+
+    $response = $this->postJson('/api/login', [
+        'email' => 'customer@example.com',
+        'password' => 'secret-password',
+    ])
+        ->assertOk()
+        ->assertJsonPath('user.id', $user->id)
+        ->assertJsonPath('user.role', 'customer')
+        ->assertJsonStructure(['token']);
+
+    $this->withToken($response->json('token'))
+        ->getJson('/api/my-transactions')
+        ->assertOk()
+        ->assertExactJson([]);
+});
+
+it('revokes the current access token when a customer logs out', function () {
+    $customer = User::factory()->create();
+    $token = $customer->createToken('test-token');
+
+    $this->withToken($token->plainTextToken)
+        ->postJson('/api/logout')
+        ->assertNoContent();
+
+    $this->assertDatabaseMissing('personal_access_tokens', [
+        'id' => $token->accessToken->id,
+    ]);
+
+});
+
+it('requires authentication to log out', function () {
+    $this->postJson('/api/logout')->assertUnauthorized();
+});
+
 it('returns validation errors when required registration fields are missing', function () {
     $this->postJson('/api/register', [])
         ->assertUnprocessable()

@@ -1,43 +1,18 @@
 <?php
 
-use App\Http\Controllers\AuthorPageController;
-use App\Http\Controllers\GenrePageController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
-Route::view('/register', 'auth.register')->name('register');
 
 Route::get('/', function () {
     return response()->file(public_path('index.html'));
 })->name('home');
 
-Route::controller(GenrePageController::class)
-    ->prefix('genres')
-    ->name('genres.page.')
-    ->group(function () {
-        Route::middleware('admin')->group(function () {
-            Route::get('/create', 'create')->name('create');
-            Route::post('/', 'store')->name('store');
-            Route::get('/{genre}/edit', 'edit')->name('edit');
-            Route::match(['put', 'patch'], '/{genre}', 'update')->name('update');
-            Route::delete('/{genre}', 'destroy')->name('destroy');
-        });
+Route::get('/{path}', function (Request $request, string $path) {
+    if (str_starts_with($path, 'api/')) {
+        abort(404);
+    }
 
-        Route::get('/', 'index')->name('index');
-        Route::get('/{genre}', 'show')->name('show');
-    });
+    $applicationPath = rtrim($request->getBaseUrl(), '/');
 
-Route::controller(AuthorPageController::class)
-    ->prefix('authors')
-    ->name('authors.page.')
-    ->group(function () {
-        Route::middleware('admin')->group(function () {
-            Route::get('/create', 'create')->name('create');
-            Route::post('/', 'store')->name('store');
-            Route::get('/{author}/edit', 'edit')->name('edit');
-            Route::match(['put', 'patch'], '/{author}', 'update')->name('update');
-            Route::delete('/{author}', 'destroy')->name('destroy');
-        });
-
-        Route::get('/', 'index')->name('index');
-        Route::get('/{author}', 'show')->name('show');
-    });
+    return redirect()->to($request->getSchemeAndHttpHost().$applicationPath.'/#/'.ltrim($path, '/'));
+})->where('path', '.*');

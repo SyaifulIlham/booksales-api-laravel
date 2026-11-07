@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { createRoot } from 'react-dom/client';
 import AdminLogin from './admin/components/AdminLogin';
 import AdminSidebar from './admin/components/AdminSidebar';
 import CatalogRecordList from './admin/components/CatalogRecordList';
@@ -9,11 +8,10 @@ import SummaryCard from './admin/components/SummaryCard';
 import { sections } from './admin/sections';
 import '../css/admin.css';
 
-const API_BASE = `${window.location.pathname.replace(/\/$/, '')}/api`;
 const SESSION_KEY = 'booksales-admin-session';
 
 async function apiRequest(path, { token, ...options } = {}) {
-    const response = await fetch(`${API_BASE}/${path}`, {
+    const response = await fetch(new URL(`api/${path}`, new URL('./', window.location.href)), {
         ...options,
         headers: {
             Accept: 'application/json',
@@ -45,7 +43,7 @@ function getSavedSession() {
     }
 }
 
-function App() {
+export default function AdminApp() {
     const [session, setSession] = useState(getSavedSession);
     const [activeSection, setActiveSection] = useState('genres');
     const [records, setRecords] = useState({ genres: [], authors: [] });
@@ -353,5 +351,3 @@ function App() {
         </div>
     );
 }
-
-createRoot(document.getElementById('root')).render(<App />);

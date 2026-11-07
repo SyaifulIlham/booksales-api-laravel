@@ -21,6 +21,20 @@ class TransactionController extends Controller
         return response()->json($transactions);
     }
 
+    public function mine(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        abort_unless($user !== null, 401);
+
+        $transactions = $user->transactions()
+            ->with(['book.author', 'book.genre'])
+            ->orderByDesc('id')
+            ->get();
+
+        return response()->json($transactions);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([

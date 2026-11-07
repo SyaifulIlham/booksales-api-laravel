@@ -7,8 +7,6 @@ export default function AdminLogin({ error, onSubmit, saving }) {
             <section className="login-card">
                 <Brand />
                 <div className="login-heading">
-                    <span className="eyebrow">RUANG KERJA ADMIN</span>
-                    <h1>Selamat datang kembali.</h1>
                     <p>Masuk untuk mengelola genre dan author BookSales.</p>
                 </div>
                 <form className="form-stack" onSubmit={onSubmit}>
@@ -29,7 +27,7 @@ export default function AdminLogin({ error, onSubmit, saving }) {
                 <p className="login-footnote">
                     Akses khusus untuk administrator BookSales.
                     <br />
-                    Customer baru? <a href="/register">Daftar di sini</a>.
+                    Customer? <a href="#/login">Masuk di sini</a>.
                 </p>
             </section>
             <aside className="login-aside">
@@ -43,7 +41,7 @@ export default function AdminLogin({ error, onSubmit, saving }) {
                         <span /><span /><span />
                     </div>
                 </div>
-                <span className="aside-caption">BOOKSALES · ADMIN WORKSPACE</span>
+                <span className="aside-caption">BOOKSALES · ADMIN CONSOLE</span>
             </aside>
         </main>
     );

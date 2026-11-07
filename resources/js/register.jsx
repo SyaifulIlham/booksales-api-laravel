@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { createRoot } from 'react-dom/client';
+import { apiRequest } from './api';
 import '../css/register.css';
 
 const APP_BASE_URL = new URL('./', window.location.href);
-const REGISTER_ENDPOINT = new URL('api/register', APP_BASE_URL);
 
-function RegisterApp() {
+export default function RegisterPage({ onRegistered }) {
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isRegistered, setIsRegistered] = useState(false);
@@ -26,12 +25,8 @@ function RegisterApp() {
         setIsSubmitting(true);
 
         try {
-            const response = await fetch(REGISTER_ENDPOINT, {
+            const result = await apiRequest('register', {
                 method: 'POST',
-                headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({
                     name: formData.get('name'),
                     username: formData.get('username'),
@@ -40,16 +35,8 @@ function RegisterApp() {
                     password_confirmation: passwordConfirmation,
                 }),
             });
-            const payload = await response.json();
-
-            if (!response.ok) {
-                const validationMessage = payload.errors
-                    ? Object.values(payload.errors).flat().join(' ')
-                    : null;
-                throw new Error(validationMessage || payload.message || 'Registrasi gagal. Silakan coba lagi.');
-            }
-
             setIsRegistered(true);
+            onRegistered(result);
         } catch (requestError) {
             setError(requestError.message || 'Tidak dapat terhubung ke server. Silakan coba lagi.');
         } finally {
@@ -87,7 +74,7 @@ function RegisterApp() {
                             <span className="form-eyebrow">AKUN SIAP DIGUNAKAN</span>
                             <h2 id="register-title">Selamat bergabung!</h2>
                             <p>Akun BookSales-mu berhasil dibuat. Sekarang kamu bisa mulai menjelajahi katalog buku.</p>
-                            <a className="submit-button" href={APP_BASE_URL.href}>Kembali ke halaman utama <span aria-hidden="true">→</span></a>
+                            <a className="submit-button" href={`${APP_BASE_URL.href}#/login`}>Masuk ke akun <span aria-hidden="true">→</span></a>
                         </div>
                     ) : (
                         <>
@@ -165,10 +152,8 @@ function RegisterApp() {
                         </>
                     )}
                 </div>
-                <p className="register-help">Butuh bantuan? <a href={APP_BASE_URL.href}>Kunjungi halaman utama</a></p>
+                <p className="register-help">Sudah punya akun? <a href={`${APP_BASE_URL.href}#/login`}>Masuk di sini</a></p>
             </section>
         </main>
     );
 }
-
-createRoot(document.getElementById('register-root')).render(<RegisterApp />);
