@@ -235,7 +235,7 @@ it('requires author fields when creating an author', function () {
     $this->assertDatabaseCount('authors', 0);
 });
 
-it('prevents deleting genres and authors used by books', function () {
+it('requires a replacement when deleting genres and authors used by books', function () {
     $this->actingAs(User::factory()->admin()->create());
 
     $book = Book::factory()->create();
@@ -249,4 +249,43 @@ it('prevents deleting genres and authors used by books', function () {
         ->delete(route('authors.page.destroy', $book->author))
         ->assertSessionHasErrors(['delete']);
     $this->assertModelExists($book->author);
+});
+
+it('moves books to replacements before deleting genres and authors from their pages', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $genre = Genre::factory()->create(['name' => 'Genre to remove']);
+    $replacementGenre = Genre::factory()->create(['name' => 'Replacement genre']);
+    $author = Author::factory()->create(['name' => 'Author to remove']);
+    $replacementAuthor = Author::factory()->create(['name' => 'Replacement author']);
+    $book = Book::factory()->create([
+        'genre_id' => $genre->id,
+        'author_id' => $author->id,
+    ]);
+
+    $this->get(route('genres.page.show', $genre))
+        ->assertOk()
+        ->assertSee('Pindahkan buku ke genre')
+        ->assertSee($replacementGenre->name);
+
+    $this->get(route('authors.page.show', $author))
+        ->assertOk()
+        ->assertSee('Pindahkan buku ke author')
+        ->assertSee($replacementAuthor->name);
+
+    $this->delete(route('genres.page.destroy', $genre), ['replacement_id' => $replacementGenre->id])
+        ->assertRedirect(route('genres.page.index'));
+    $this->assertDatabaseMissing('genres', ['id' => $genre->id]);
+    $this->assertDatabaseHas('books', [
+        'id' => $book->id,
+        'genre_id' => $replacementGenre->id,
+    ]);
+
+    $this->delete(route('authors.page.destroy', $author), ['replacement_id' => $replacementAuthor->id])
+        ->assertRedirect(route('authors.page.index'));
+    $this->assertDatabaseMissing('authors', ['id' => $author->id]);
+    $this->assertDatabaseHas('books', [
+        'id' => $book->id,
+        'author_id' => $replacementAuthor->id,
+    ]);
 });

@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Author;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class AuthorController extends Controller
 {
     public function index(): JsonResponse
     {
         $authors = Author::query()
+            ->withCount('books')
             ->orderBy('name')
             ->get();
 
@@ -46,15 +49,40 @@ class AuthorController extends Controller
         return response()->json($author);
     }
 
-    public function destroy(Author $author): JsonResponse
+    public function destroy(Request $request, Author $author): JsonResponse
     {
-        if ($author->books()->exists()) {
-            return response()->json([
-                'message' => 'Author cannot be deleted while books are associated with it.',
-            ], 409);
+        $validated = $request->validate([
+            'replacement_id' => ['sometimes', 'required', 'integer', 'exists:authors,id'],
+        ]);
+        $replacementId = isset($validated['replacement_id']) ? (int) $validated['replacement_id'] : null;
+
+        if ($replacementId === $author->id) {
+            throw ValidationException::withMessages([
+                'replacement_id' => 'Choose a different author for the associated books.',
+            ]);
         }
 
-        $author->delete();
+        $deleted = DB::transaction(function () use ($author, $replacementId): bool {
+            $author = Author::query()->lockForUpdate()->findOrFail($author->id);
+
+            if ($author->books()->exists() && $replacementId === null) {
+                return false;
+            }
+
+            if ($replacementId !== null) {
+                $author->books()->update(['author_id' => $replacementId]);
+            }
+
+            $author->delete();
+
+            return true;
+        });
+
+        if (! $deleted) {
+            return response()->json([
+                'message' => 'Choose a replacement author before deleting an author used by books.',
+            ], 409);
+        }
 
         return response()->json(null, 204);
     }

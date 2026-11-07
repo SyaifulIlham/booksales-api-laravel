@@ -11,6 +11,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/js/app.js',
                 'resources/js/admin.jsx',
+                'resources/js/register.jsx',
             ],
             refresh: true,
         }),

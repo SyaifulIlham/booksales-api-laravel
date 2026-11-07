@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Genre;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class GenreController extends Controller
 {
     public function index(): JsonResponse
     {
         $genres = Genre::query()
+            ->withCount('books')
             ->orderBy('name')
             ->get();
 
@@ -44,15 +47,40 @@ class GenreController extends Controller
         return response()->json($genre);
     }
 
-    public function destroy(Genre $genre): JsonResponse
+    public function destroy(Request $request, Genre $genre): JsonResponse
     {
-        if ($genre->books()->exists()) {
-            return response()->json([
-                'message' => 'Genre cannot be deleted while books are associated with it.',
-            ], 409);
+        $validated = $request->validate([
+            'replacement_id' => ['sometimes', 'required', 'integer', 'exists:genres,id'],
+        ]);
+        $replacementId = isset($validated['replacement_id']) ? (int) $validated['replacement_id'] : null;
+
+        if ($replacementId === $genre->id) {
+            throw ValidationException::withMessages([
+                'replacement_id' => 'Choose a different genre for the associated books.',
+            ]);
         }
 
-        $genre->delete();
+        $deleted = DB::transaction(function () use ($genre, $replacementId): bool {
+            $genre = Genre::query()->lockForUpdate()->findOrFail($genre->id);
+
+            if ($genre->books()->exists() && $replacementId === null) {
+                return false;
+            }
+
+            if ($replacementId !== null) {
+                $genre->books()->update(['genre_id' => $replacementId]);
+            }
+
+            $genre->delete();
+
+            return true;
+        });
+
+        if (! $deleted) {
+            return response()->json([
+                'message' => 'Choose a replacement genre before deleting a genre used by books.',
+            ], 409);
+        }
 
         return response()->json(null, 204);
     }

@@ -6,12 +6,15 @@ use App\Models\Author;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class AuthorPageController extends Controller
 {
     public function index(): View
     {
         $authors = Author::query()
+            ->withCount('books')
             ->orderBy('name')
             ->get();
 
@@ -25,7 +28,13 @@ class AuthorPageController extends Controller
 
     public function show(Author $author): View
     {
-        return view('authors.show', compact('author'));
+        $author->loadCount('books');
+        $replacementAuthors = Author::query()
+            ->where('id', '!=', $author->id)
+            ->orderBy('name')
+            ->get();
+
+        return view('authors.show', compact('author', 'replacementAuthors'));
     }
 
     public function edit(Author $author): View
@@ -63,15 +72,40 @@ class AuthorPageController extends Controller
             ->with('status', 'Author berhasil diperbarui.');
     }
 
-    public function destroy(Author $author): RedirectResponse
+    public function destroy(Request $request, Author $author): RedirectResponse
     {
-        if ($author->books()->exists()) {
-            return back()->withErrors([
-                'delete' => 'Author tidak dapat dihapus selama masih digunakan oleh buku.',
+        $validated = $request->validate([
+            'replacement_id' => ['sometimes', 'required', 'integer', 'exists:authors,id'],
+        ]);
+        $replacementId = isset($validated['replacement_id']) ? (int) $validated['replacement_id'] : null;
+
+        if ($replacementId === $author->id) {
+            throw ValidationException::withMessages([
+                'replacement_id' => 'Pilih author pengganti yang berbeda.',
             ]);
         }
 
-        $author->delete();
+        $deleted = DB::transaction(function () use ($author, $replacementId): bool {
+            $author = Author::query()->lockForUpdate()->findOrFail($author->id);
+
+            if ($author->books()->exists() && $replacementId === null) {
+                return false;
+            }
+
+            if ($replacementId !== null) {
+                $author->books()->update(['author_id' => $replacementId]);
+            }
+
+            $author->delete();
+
+            return true;
+        });
+
+        if (! $deleted) {
+            return back()->withErrors([
+                'delete' => 'Pilih author pengganti untuk memindahkan buku sebelum menghapus author ini.',
+            ])->withInput();
+        }
 
         return redirect()
             ->route('authors.page.index')

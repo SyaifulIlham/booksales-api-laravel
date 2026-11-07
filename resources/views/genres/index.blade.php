@@ -20,6 +20,7 @@
                 <p class="muted">ID {{ $genre->id }}</p>
                 <h2>{{ $genre->name }}</h2>
                 <p>{{ $genre->description }}</p>
+                @php($replacementGenres = $genres->where('id', '!=', $genre->id))
                 <p>
                     <a href="{{ route('genres.page.show', $genre) }}">Detail</a>
                     <a href="{{ route('genres.page.edit', $genre) }}">Ubah</a>
@@ -27,7 +28,24 @@
                 <form method="POST" action="{{ route('genres.page.destroy', $genre) }}">
                     @csrf
                     @method('DELETE')
-                    <button class="button" type="submit">Hapus</button>
+                    @if ($genre->books_count > 0)
+                        @if ($replacementGenres->isNotEmpty())
+                            <label>
+                                Pindahkan buku ke genre
+                                <select name="replacement_id" required>
+                                    <option value="">Pilih genre pengganti</option>
+                                    @foreach ($replacementGenres as $replacementGenre)
+                                        <option value="{{ $replacementGenre->id }}">{{ $replacementGenre->name }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+                        @else
+                            <p>Tambahkan genre lain sebagai tujuan pemindahan buku terlebih dahulu.</p>
+                        @endif
+                    @endif
+                    @if ($genre->books_count === 0 || $replacementGenres->isNotEmpty())
+                        <button class="button" type="submit">Hapus</button>
+                    @endif
                 </form>
             </article>
         @endforeach

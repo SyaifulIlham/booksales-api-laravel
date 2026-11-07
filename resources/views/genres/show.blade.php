@@ -21,6 +21,23 @@
     <form method="POST" action="{{ route('genres.page.destroy', $genre) }}">
         @csrf
         @method('DELETE')
-        <button class="button" type="submit">Hapus genre</button>
+        @if ($genre->books_count > 0)
+            @if ($replacementGenres->isNotEmpty())
+                <label>
+                    Pindahkan buku ke genre
+                    <select name="replacement_id" required>
+                        <option value="">Pilih genre pengganti</option>
+                        @foreach ($replacementGenres as $replacementGenre)
+                            <option value="{{ $replacementGenre->id }}">{{ $replacementGenre->name }}</option>
+                        @endforeach
+                    </select>
+                </label>
+            @else
+                <p>Tambahkan genre lain sebagai tujuan pemindahan buku terlebih dahulu.</p>
+            @endif
+        @endif
+        @if ($genre->books_count === 0 || $replacementGenres->isNotEmpty())
+            <button class="button" type="submit">Hapus genre</button>
+        @endif
     </form>
 @endsection

@@ -4,6 +4,8 @@ use App\Http\Controllers\AuthorPageController;
 use App\Http\Controllers\GenrePageController;
 use Illuminate\Support\Facades\Route;
 
+Route::view('/register', 'auth.register')->name('register');
+
 Route::get('/', function () {
     return response()->file(public_path('index.html'));
 })->name('home');

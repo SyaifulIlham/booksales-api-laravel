@@ -127,8 +127,8 @@ button:disabled { cursor: wait; opacity: .7; }
 .close-button { align-self: flex-start; width: 30px; height: 30px; color: #858395; background: #f5f4f8; border: 0; border-radius: 8px; font-size: 20px; }
 .form-stack { display: grid; gap: 16px; }
 .form-stack label { display: grid; gap: 7px; color: #4a495c; font-size: 10px; font-weight: 700; }
-.form-stack input, .form-stack textarea { width: 100%; padding: 11px 12px; color: #343248; background: #fff; border: 1px solid #e9e7ef; border-radius: 8px; outline: 0; font-size: 11px; font-weight: 400; transition: border-color .15s, box-shadow .15s; }
-.form-stack input:focus, .form-stack textarea:focus { border-color: #8a7be4; box-shadow: 0 0 0 3px #6958d81a; }
+.form-stack input, .form-stack textarea, .form-stack select { width: 100%; padding: 11px 12px; color: #343248; background: #fff; border: 1px solid #e9e7ef; border-radius: 8px; outline: 0; font-size: 11px; font-weight: 400; transition: border-color .15s, box-shadow .15s; }
+.form-stack input:focus, .form-stack textarea:focus, .form-stack select:focus { border-color: #8a7be4; box-shadow: 0 0 0 3px #6958d81a; }
 .form-stack input::placeholder, .form-stack textarea::placeholder { color: #b1afbd; }
 .form-stack textarea { min-height: 95px; resize: vertical; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 5px; }
@@ -144,6 +144,8 @@ button:disabled { cursor: wait; opacity: .7; }
 .button-wide { width: 100%; min-height: 46px; margin-top: 3px; }
 .button-wide span { margin-left: auto; font-size: 17px; font-weight: 400; }
 .login-footnote { margin: 22px 0 0; color: #aaa8b7; text-align: center; font-size: 10px; }
+.login-footnote a { color: #5c4bc4; font-weight: 700; text-decoration: none; }
+.login-footnote a:hover { text-decoration: underline; }
 .login-aside { position: relative; display: flex; min-height: 100vh; overflow: hidden; align-items: center; padding: 12%; color: #fff; background: radial-gradient(ellipse at 85% 12%, #f5be8133, transparent 33%), linear-gradient(145deg, #6555d0, #433792 72%, #352c78); }
 .aside-copy { position: relative; z-index: 1; max-width: 430px; }
 .aside-copy .eyebrow { color: #d5ceff; }

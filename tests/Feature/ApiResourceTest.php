@@ -145,21 +145,73 @@ it('rejects invalid book data without creating a book', function () {
     $this->assertDatabaseCount('books', 0);
 });
 
-it('prevents deleting authors and genres that are used by books', function () {
+it('requires a replacement when deleting authors and genres used by books', function () {
     $this->actingAs(User::factory()->admin()->create());
 
     $book = Book::factory()->create();
 
     $this->deleteJson("/api/authors/{$book->author_id}")
         ->assertConflict()
-        ->assertJsonPath('message', 'Author cannot be deleted while books are associated with it.');
+        ->assertJsonPath('message', 'Choose a replacement author before deleting an author used by books.');
 
     $this->deleteJson("/api/genres/{$book->genre_id}")
         ->assertConflict()
-        ->assertJsonPath('message', 'Genre cannot be deleted while books are associated with it.');
+        ->assertJsonPath('message', 'Choose a replacement genre before deleting a genre used by books.');
 
     $this->assertModelExists($book->author);
     $this->assertModelExists($book->genre);
+});
+
+it('moves associated books before deleting their author and genre', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $genre = Genre::factory()->create(['name' => 'Genre to remove']);
+    $replacementGenre = Genre::factory()->create(['name' => 'Replacement genre']);
+    $author = Author::factory()->create(['name' => 'Author to remove']);
+    $replacementAuthor = Author::factory()->create(['name' => 'Replacement author']);
+    $book = Book::factory()->create([
+        'genre_id' => $genre->id,
+        'author_id' => $author->id,
+    ]);
+
+    $genreList = $this->getJson('/api/genres')->assertOk()->json();
+    expect(collect($genreList)->firstWhere('id', $genre->id)['books_count'])->toBe(1);
+
+    $authorList = $this->getJson('/api/authors')->assertOk()->json();
+    expect(collect($authorList)->firstWhere('id', $author->id)['books_count'])->toBe(1);
+
+    $this->deleteJson("/api/genres/{$genre->id}", ['replacement_id' => $replacementGenre->id])
+        ->assertNoContent();
+    $this->assertDatabaseMissing('genres', ['id' => $genre->id]);
+    $this->assertDatabaseHas('books', [
+        'id' => $book->id,
+        'genre_id' => $replacementGenre->id,
+    ]);
+
+    $this->deleteJson("/api/authors/{$author->id}", ['replacement_id' => $replacementAuthor->id])
+        ->assertNoContent();
+    $this->assertDatabaseMissing('authors', ['id' => $author->id]);
+    $this->assertDatabaseHas('books', [
+        'id' => $book->id,
+        'author_id' => $replacementAuthor->id,
+    ]);
+});
+
+it('rejects the deleted author or genre as its own replacement', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $book = Book::factory()->create();
+
+    $this->deleteJson("/api/genres/{$book->genre_id}", ['replacement_id' => $book->genre_id])
+        ->assertUnprocessable()
+        ->assertInvalid(['replacement_id']);
+
+    $this->deleteJson("/api/authors/{$book->author_id}", ['replacement_id' => $book->author_id])
+        ->assertUnprocessable()
+        ->assertInvalid(['replacement_id']);
+
+    $this->assertModelExists($book->genre);
+    $this->assertModelExists($book->author);
 });
 
 it('returns not found when requesting a resource that does not exist', function () {
