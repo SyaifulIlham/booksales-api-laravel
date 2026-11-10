@@ -190,6 +190,10 @@ function StorefrontApp() {
     const isOrdersPage = page === 'orders';
     const visibleSession = customerSession?.user?.role === 'customer' ? customerSession : null;
 
+    if (isOrdersPage && !visibleSession) {
+        return <CustomerLogin onLogin={handleAuthentication} />;
+    }
+
     return (
         <div className="storefront">
             <CustomerHeader onLogout={handleLogout} session={visibleSession} />

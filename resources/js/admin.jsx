@@ -5,38 +5,23 @@ import CatalogRecordList from './admin/components/CatalogRecordList';
 import DeleteRecordModal from './admin/components/DeleteRecordModal';
 import RecordFormModal from './admin/components/RecordFormModal';
 import SummaryCard from './admin/components/SummaryCard';
+import { apiRequest } from './api';
 import { sections } from './admin/sections';
 import '../css/admin.css';
 
 const SESSION_KEY = 'booksales-admin-session';
 
-async function apiRequest(path, { token, ...options } = {}) {
-    const response = await fetch(new URL(`api/${path}`, new URL('./', window.location.href)), {
-        ...options,
-        headers: {
-            Accept: 'application/json',
-            ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            ...options.headers,
-        },
-    });
-
-    const payload = response.status === 204 ? null : await response.json();
-
-    if (!response.ok) {
-        const validationMessage = payload?.errors
-            ? Object.values(payload.errors).flat().join(' ')
-            : null;
-        throw new Error(validationMessage || payload?.message || 'Permintaan gagal. Coba lagi.');
-    }
-
-    return payload;
-}
-
 function getSavedSession() {
     try {
         const savedSession = window.localStorage.getItem(SESSION_KEY);
-        return savedSession ? JSON.parse(savedSession) : null;
+        const session = savedSession ? JSON.parse(savedSession) : null;
+
+        if (session?.token && session?.user?.role === 'admin') {
+            return session;
+        }
+
+        window.localStorage.removeItem(SESSION_KEY);
+        return null;
     } catch {
         window.localStorage.removeItem(SESSION_KEY);
         return null;

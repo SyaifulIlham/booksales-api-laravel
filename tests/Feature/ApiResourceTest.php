@@ -9,6 +9,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 it('creates reads updates and deletes a book through the API', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $author = Author::factory()->create();
     $genre = Genre::factory()->create();
 
@@ -55,6 +57,34 @@ it('creates reads updates and deletes a book through the API', function () {
         ->assertNoContent();
 
     $this->assertDatabaseMissing('books', ['id' => $book->id]);
+});
+
+it('allows only admins to create update and delete books through the API', function () {
+    $author = Author::factory()->create();
+    $genre = Genre::factory()->create();
+    $book = Book::factory()->create();
+    $attributes = [
+        'title' => 'Restricted Book',
+        'description' => 'Book description',
+        'price' => 42.50,
+        'stock' => 8,
+        'cover_photo' => 'restricted-book.jpg',
+        'genre_id' => $genre->id,
+        'author_id' => $author->id,
+    ];
+
+    $this->postJson('/api/books', $attributes)->assertUnauthorized();
+    $this->patchJson("/api/books/{$book->id}", ['title' => 'Changed Book'])->assertUnauthorized();
+    $this->deleteJson("/api/books/{$book->id}")->assertUnauthorized();
+
+    $this->actingAs(User::factory()->create());
+
+    $this->postJson('/api/books', $attributes)->assertForbidden();
+    $this->patchJson("/api/books/{$book->id}", ['title' => 'Changed Book'])->assertForbidden();
+    $this->deleteJson("/api/books/{$book->id}")->assertForbidden();
+
+    $this->assertDatabaseCount('books', 1);
+    $this->assertDatabaseHas('books', ['id' => $book->id, 'title' => $book->title]);
 });
 
 it('creates reads updates and deletes a genre through the API', function () {
@@ -125,6 +155,8 @@ it('creates reads updates and deletes an author through the API', function () {
 });
 
 it('rejects invalid book data without creating a book', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
     $this->postJson('/api/books', [
         'title' => '',
         'price' => -1,
